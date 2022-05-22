@@ -6,6 +6,8 @@ B榜提交原始代码-附带提交时刻checkpoint：
   包含可能是最后一次提交的原始代码以及checkpoint
   运行方式：
   依次运行task0.ipynb - task7.ipynb生成7个task的结果，最后运行Combinator.ipynb生成最后结果。
+  
+  注意：训练代码/预测代码和该原始代码有一定代码优化，因此中间文件可能不能通用。
 
 训练代码:
   训练模型的代码，输出模型参数到gp_ensemble_task0.pickle - gp_ensemble_task7.pickle
