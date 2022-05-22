@@ -28,7 +28,14 @@ B榜提交原始代码-附带提交时刻checkpoint：
 
   依次运行目录下5份ipynb文件，生成
   optimweight_fast.pkl
+  
   optimweight_0703_leftskewness_fast.pkl
+  
   optimweight_065035_fast.pkl
+  
   optimweight_0703_fast.pkl
+  
   optimweight_0109_skewness_fast.pkl
+  
+  
+ 这5个文件是5种不同的kernel weight, 使用的时候需要放在data目录下。
