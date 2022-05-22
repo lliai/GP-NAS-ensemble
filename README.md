@@ -1,6 +1,4 @@
-# NAScompetition-gp-ensemble
-
-文件夹说明：
+# NAScompetition-gp-ensemble (TEAM Bingo)
 
 
 B榜提交原始代码-附带提交时刻checkpoint：
