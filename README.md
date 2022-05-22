@@ -1,4 +1,4 @@
-# NAScompetition-gp-ensemble (TEAM Bingo)
+# CVPR2022 NAS竞赛Track 2第2名方案
 
 
 B榜提交原始代码-附带提交时刻checkpoint：
