@@ -26,7 +26,7 @@ B榜提交原始代码-附带提交时刻checkpoint：
 基于贝叶斯优化的方式生成kernel的weight
 注意：不同系统中运行的结果可能会比较不一致，本目录下有探讨推荐的系统配置。
 
-  依次运行目录下5分ipynb文件，生成
+  依次运行目录下5份ipynb文件，生成
   optimweight_fast.pkl
   optimweight_0703_leftskewness_fast.pkl
   optimweight_065035_fast.pkl
