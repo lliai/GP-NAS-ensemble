@@ -1,0 +1,67 @@
+方法讨论:
+
+我们首先讲一下我们理解的baseline的方法: Baseline方法的核心是GP算法。传统的GP算法会给x的先验，也就是m(x)给予一个0的value。GP-nas算法相对GP的核心改进是
+通过一个线性回归的方式估计了m(x)的值。最终对f(x)进行估计时，信息的来源于2个方面：第一个是先验m(x)的估计值，一个是x附近的其他样本相对于对应的均值的diff，通过类似卡尔曼增益的方式传导
+到f(x)。这块的核心在于计算两个样本之间的相似度，主要是通过kernel function来计算。
+
+
+如果我们不想在baseline的框架下做太大的改动，那么大概2个主要的优化点是：
+1. 先验估计的计算优化
+2. kernel function的形式优化
+
+
+我们的优化思路：
+1. 先验估计的计算优化：
+一般来说，estimation算法的优化是三个方面，即模型和特征和数据。由于这次竞赛的样本数目比较少，线性回归似乎已经是比较好的选择了。因此改动主要是特征和数据的设计上面
+我们同时采取了两种改进的feature，最后先验估计的时候采取两种feature ensemble的形式。
+
+feature set1: one-hot encoding。对于特征中的1: 我们用[1, 0, 0, 0]表示，对于特征中的2：我们用[0, 1, 0, 0]来表示，以此类推。这种做的思路在于，神经网络的结构和精度是一个高度非线性的关系。
+特征"2"相对"1"对模型精度的增量应该和"3"相对"2"的增量不一致，这样做违反了线性回归的假设。因此我们认为 one-hot encoding更加适合这个场景。
+
+feature set2: two-hot encoding。 对于特征中的1:我们用[1, 1, 0, 0]表示， 对于特征中的2，我们用[0, 1, 1, 0]来表示，以此类推。这种做的思路在于，我们希望特征"3"相对"2"，
+相比特征"3"相对"1"的距离更大。
+
+先验估计值最终计算时，m(x) = a_1 * m_1(x) + a_2 * m_2(x) + a_3 * m_3(x) 的形式
+其中m_1(x)是feature set1在baseline方法下先验估计值，m_2(x)是feature set2在baseline方法下先验估计值，m_3(x)是其他的补充的方法。
+m_3(x) 主要包括knn, svm等基础方法。
+
+另外，我们在实验中发现，在部分任务中(task0, task5), one-hot encoding更好，在部分任务中(其他的) two-hot encoding更好。因此，对于每个task的a_1和a_2的值以及最后ensemble时的方式都会有微调。
+
+
+对于数据来说，我们发现这次题目的拟合目标是rank而不是传统的accuracy。对于大部分回归模型来说，拟合accuracy是一个更加自然的选择。因此需要根据rank猜测accuracy的结果。
+我们采取了2种方法获得rank和accuracy的映射关系：
+(1) 假设accuracy服从正态分布: 利用标准正态分布采样500个点，用他们的accuracy作为猜测值。
+(2) 假设accuracy服从左倾正态分布：利用左倾正态分布采样500个点，用他们的accuracy作为猜测值。（利用skewnorm.rvs(a, size=500)函数生成。）
+
+我们并不知道先验的最终ensemble方法和accuracy的猜测形式。为了解决这样的问题，我们尝试很多配置的组合，寻找A榜上的最佳配置作为最终的配置。
+
+kernel function的形式优化:
+经过一些尝试，我们并没有找到更好的kernel function的形式，因此主要的工作就是在kernel上对于不同的特征加入了权重：最后的计算方式如下
+
+weight: 权重
+mat_diff: np.abs(feature_1 - feature_2)
+diffs = np.dot(mat_diff * np.array(weight), mat_diff)
+k1 = np.exp(-np.sqrt(diffs) / 24)
+
+最后我们没有完全使用带权重的weighted kernel的形式。而是吸取了RKHS理论中，如果K1 和 K2都是合理的kernel, 那么k1 + k2也是一个合理的kernel.
+最后我们的输出结果k = k1 + k2，其中k1是weighted kernel， k2是普通的kernel。
+这么做其实是考虑到weighted kernel容易出现过拟合的现象，因此使用这种方法ensemble，最后可以起到一个类似正则化的效果。
+
+
+kernel weight的寻优方式
+kernel weight 我们认为无论人工调试或者自动化寻优都是可行的寻优方式。由于我们缺乏相关经验与技巧，在这里我们是采取贝叶斯优化的方式进行调试。
+具体来说，我们将训练集和测试集按照0.8和0.2的比例分割，然后通过使得测试集tau指标最优的目标进行贝叶斯优化调参。
+
+
+最终的7个task的预测算法基于A榜的结果进行调试，具体实现步骤会略有不同，具体来说
+task0: kernel length = 22; a_1 = 0.18, a_2 = 0.82; 正态分布
+task1: kernel length = 28; a_1 = 0.62, a_2 = 0.38; 左倾正态分布
+task2: kernel length = 24; a_1 = 0.02, a_2 = 0.98; 左倾正态分布
+task3: kernel length = 24; a_1 = 0.6, a_2 = 0.4;正态分布
+task4: kernel length = 22; a_1 = 0.7, a_2 = 0.3; 左倾正态分布
+task5: kernel length = 22; a_1 = 0.3, a_2 = 0.7;正态分布
+task6: kernel length = 22;正态分布
+task7: kernel length = 28; a_1 = 0.3, a_2 = 0.7;正态分布
+
+#注：task6稍微有点不一样。我们没有使用其他6个task类似的方法，因为A榜评测分数较低。最终实现的方法是采取5种不同的kernel feature方式进行ensemble. 这五种方式为[one-hot, two-hot, nine-hot, one-hot + nine-hot, two-hot + nine-hot]
+且task6没有采取weighted kernel的形式
