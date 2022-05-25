@@ -1,0 +1,15 @@
+输入数据： 神经网络的结构与排名
+
+特征工程:
+通过Preprocessing_1, Preprocessig_2这两个类实现，分别为特征的one-hot encoding和 two-hot encoding.
+
+排名转化为accuracry的猜测值：
+通过Label_Transformer类实现，实现方式为正态分布采样或者左倾正态分布采样，每个task的具体形式根据A榜的分数手工选择。。
+
+经过特征工程与排名转化的数据被用来训练GP-NAS模型。
+GP-NAS的kernel的形式通过人工设计结合贝叶斯优化产生，每个task的具体形式根据A榜的分数手工选择。
+
+多个GP-NAS模型与KNN或者SVM模型被整合成一个集成模型，用类GPNAS_ensemble表示。
+这些模型的ensemble用来输出最终预测时高斯过程模型的先验预测值。 由先验获取后验的过程和原始GP-NAS算法一致，每个task的具体ensemble形式根据A榜的分数手工选择。
+
+最后的输出结果需要由分数转化成rank
